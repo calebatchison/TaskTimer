@@ -1,0 +1,43 @@
+# macOS system files
+.DS_Store
+*.swp
+*.lock
+
+# Xcode build files
+build/
+DerivedData/
+xcuserdata/
+
+# Xcode workspace and schemes
+*.xcworkspace/
+*.xcuserstate
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# CocoaPods (if used)
+Pods/
+Podfile.lock
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Carthage dependencies
+Carthage/
+
+# Fastlane files (if used)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Ignore environment files (if used)
+.env
+
+# Ignore archives and logs
+*.xcarchive
+*.xccheckout
+
+# Ignore Playgrounds history
+playground.xcworkspace/
+playground.xcworkspace/xcuserdata/
