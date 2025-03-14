@@ -1,59 +1,28 @@
 //
 //  ContentView.swift
-//  Timer
+//  StudyTimer
 //
 //  Created by Caleb Atchison on 3/14/25.
 //
 
 import SwiftUI
-import SwiftData
 
-struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+import SwiftUI
 
-    var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+@main
+struct StudyTimerApp: App {
+    var body: some Scene {
+        MenuBarExtra("Hello World", systemImage: "clock") {
+            VStack {
+                Text("Hello World!")
+                    .font(.headline)
+                    .padding()
+                
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
                 }
             }
-        } detail: {
-            Text("Select an item")
+            .padding()
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
