@@ -1,5 +1,5 @@
 //
-//  TimerApp.swift
+//  TaskTimerApp.swift
 //  Timer
 //
 //  Created by Caleb Atchison on 3/14/25.
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct TimerApp: App {
+struct TaskTimerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
