@@ -4,7 +4,7 @@
 *.lock
 
 # Xcode build files
-build/
+# build/
 DerivedData/
 xcuserdata/
 
