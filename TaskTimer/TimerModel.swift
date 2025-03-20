@@ -7,9 +7,7 @@
 
 import SwiftUI
 import Combine
-
-import SwiftUI
-import Combine
+import UserNotifications
 
 class TimerModel: ObservableObject {
     /// Total seconds for the countdown
@@ -22,6 +20,16 @@ class TimerModel: ObservableObject {
     @Published var isTimerRunning = false
     
     private var timer: AnyCancellable?
+    
+    init() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if let error = error {
+                print("Notification authorization error: \(error.localizedDescription)")
+            } else {
+                print("Notification permission granted: \(granted)")
+            }
+        }
+    }
     
     /// Formats the remaining time as MM:SS
     var timerString: String {
@@ -51,6 +59,7 @@ class TimerModel: ObservableObject {
                 } else {
                     // Timer finished; reset or stop as needed
                     self.cancelTimer()
+                    self.scheduleNotification()
                 }
             }
     }
@@ -66,5 +75,20 @@ class TimerModel: ObservableObject {
         isTimerRunning = false
         timer?.cancel()
         remainingSeconds = 0  // now the timer displays "00:00"
+    }
+    
+    func scheduleNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Timer Finished"
+        content.body = "Your timer has finished!"
+        content.sound = UNNotificationSound.default
+        
+        // Trigger immediately
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling notification: \(error.localizedDescription)")
+            }
+        }
     }
 }

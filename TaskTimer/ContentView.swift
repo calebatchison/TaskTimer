@@ -13,13 +13,31 @@ struct StudyTimerApp: App {
     
     var body: some Scene {
         MenuBarExtra {
-            // The content of your popover
-            TimerView()
-                .environmentObject(timerModel)
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        NSApplication.shared.terminate(nil)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Color.secondary)
+                            .font(.system(size: 12))
+                            .opacity(0.8)
+                    }
+                    .buttonStyle(.borderless)
+                }
+                // The main popover content
+                TimerView()
+                    .environmentObject(timerModel)
+                Spacer()
+            }
+            .padding()
+            .frame(width: 300, height: 240)
+            .background(.ultraThinMaterial)
         } label: {
             // The label in the menu bar
             HStack {
-                Image(systemName: "clock")
+                Image(systemName: "timer")
                     .frame(width: 20, alignment: .center)
                 
                 // Display the countdown in the menu bar
@@ -55,12 +73,12 @@ struct TimerView: View {
             .onSubmit {
                 commitTimerValue()
             }
-            .onChange(of: timerModel.isTimerRunning) { newValue in
+            .onChange(of: timerModel.isTimerRunning) { oldValue, newValue in
                 if newValue {
                     isTextFieldFocused = false
                 }
             }
-            .font(.system(size: 60, /*weight: .bold*/ design: .monospaced))
+            .font(.system(size: 80, design: .monospaced))
             .multilineTextAlignment(.center)
             .allowsHitTesting(!timerModel.isTimerRunning)  // Instead of disabling, block hit testing so it doesn't gray out
             .onAppear {
@@ -74,7 +92,7 @@ struct TimerView: View {
             
             // Buttons to control the timer
             HStack {
-                Button(timerModel.isTimerRunning ? "Pause" : "Play") {
+                Button {
                     if timerModel.isTimerRunning {
                         timerModel.pauseTimer()
                         // Update editableTime to reflect the current timer value when paused.
@@ -84,20 +102,37 @@ struct TimerView: View {
                         commitTimerValue()
                         timerModel.startTimer()
                     }
+                } label: {
+                    if timerModel.isTimerRunning {
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(Color.primary)
+                            .font(.system(size: 30))
+                    } else {
+                        Image(systemName: "play.circle.fill")
+                            .foregroundStyle(Color.primary)
+                            .font(.system(size: 30))
+                    }
                 }
+                .buttonStyle(BorderlessButtonStyle())
                 
-                Button("Cancel") {
+                Button {
                     timerModel.cancelTimer()
                     // When cancelling, update the editable text field.
                     editableTime = timerModel.timerString
+                } label: {
+                    if timerModel.isTimerRunning {
+                        Image(systemName: "stop.circle.fill")
+                            .foregroundStyle(Color.primary)
+                            .font(.system(size: 30))
+                    } else {
+                        Image(systemName: "stop.circle.fill")
+                            .foregroundStyle(Color.secondary)
+                            .font(.system(size: 30))
+                            .opacity(0.5)
+                    }
                 }
+                .buttonStyle(BorderlessButtonStyle())
             }
-            
-            // Quit button
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .font(.caption2)
         }
         .frame(width: 250, height: 150)
         .padding()
