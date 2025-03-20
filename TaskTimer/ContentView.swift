@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 @main
 struct StudyTimerApp: App {
@@ -52,53 +53,81 @@ struct StudyTimerApp: App {
 
 struct TimerView: View {
     @EnvironmentObject var timerModel: TimerModel
-    @State private var editableTime = ""
-    @FocusState private var isTextFieldFocused: Bool
+    @State private var minutesText = ""
+    @State private var secondsText = ""
+    @FocusState private var isMinutesFocused: Bool
+    @FocusState private var isSecondsFocused: Bool
     
     var body: some View {
         VStack {
-            // Shows the remaining time as an editable field when timer is not running, and non-editable when running
-            TextField("00:00", text: Binding(
-                get: {
-                    timerModel.isTimerRunning ? timerModel.timerString : editableTime
-                },
-                set: { newValue in
-                    if !timerModel.isTimerRunning {
-                        editableTime = newValue
+            // HStack for the two entry fields and a static colon
+            HStack(alignment: .center, spacing: 4) {
+                // Minutes numeric text field
+                NumericTextField(
+                    text: $minutesText,
+                    placeholder: "00",
+                    showCursor: !timerModel.isTimerRunning,
+                    font: NSFont.monospacedSystemFont(ofSize: 80, weight: .regular),
+                    onCommit: nil,
+                    onArrowLeft: nil,
+                    onArrowRight: {
+                        // Move focus to seconds field when right arrow is pressed
+                        isMinutesFocused = false
+                        isSecondsFocused = true
                     }
-                }
-            ))
-            .textFieldStyle(PlainTextFieldStyle())
-            .focused($isTextFieldFocused)
-            .onSubmit {
-                commitTimerValue()
+                )
+                .frame(width: 100, height: 100)
+                .focusable(true)
+                
+                // Static colon
+                Text(":")
+                    .font(.system(size: 80, design: .monospaced))
+                
+                // Seconds numeric text field
+                NumericTextField(
+                    text: $secondsText,
+                    placeholder: "00",
+                    showCursor: !timerModel.isTimerRunning,
+                    font: NSFont.monospacedSystemFont(ofSize: 80, weight: .regular),
+                    onCommit: nil,
+                    onArrowLeft: {
+                        // Move focus to minutes field when left arrow is pressed
+                        isSecondsFocused = false
+                        isMinutesFocused = true
+                    },
+                    onArrowRight: nil
+                )
+                .frame(width: 100, height: 100)
+                .focusable(true)
             }
-            .onChange(of: timerModel.isTimerRunning) { oldValue, newValue in
-                if newValue {
-                    isTextFieldFocused = false
-                }
-            }
-            .font(.system(size: 80, design: .monospaced))
-            .multilineTextAlignment(.center)
-            .allowsHitTesting(!timerModel.isTimerRunning)  // Instead of disabling, block hit testing so it doesn't gray out
             .onAppear {
-                editableTime = timerModel.timerString
+                // Split the current timer string (assumed to be in "MM:SS" format)
+                let components = timerModel.timerString.split(separator: ":")
+                if components.count == 2 {
+                    minutesText = String(components[0])
+                    secondsText = String(components[1])
+                }
             }
-            .onReceive(timerModel.$remainingSeconds) { newRemaining in
-                if !timerModel.isTimerRunning && newRemaining == 0 {
-                    editableTime = timerModel.timerString
+            .onChange(of: timerModel.timerString) { oldValue, newVal in
+                let comps = newVal.split(separator: ":")
+                if comps.count == 2 {
+                    minutesText = String(comps[0])
+                    secondsText = String(comps[1])
                 }
             }
             
-            // Buttons to control the timer
+            // Buttons to control the timer remain unchanged...
             HStack {
                 Button {
                     if timerModel.isTimerRunning {
                         timerModel.pauseTimer()
-                        // Update editableTime to reflect the current timer value when paused.
-                        editableTime = timerModel.timerString
+                        let comps = timerModel.timerString.split(separator: ":")
+                        if comps.count == 2 {
+                            minutesText = String(comps[0])
+                            secondsText = String(comps[1])
+                        }
                     } else {
-                        // Commit the current value from the text field before starting the timer
+                        // Commit the current fields before starting
                         commitTimerValue()
                         timerModel.startTimer()
                     }
@@ -117,8 +146,11 @@ struct TimerView: View {
                 
                 Button {
                     timerModel.cancelTimer()
-                    // When cancelling, update the editable text field.
-                    editableTime = timerModel.timerString
+                    let comps = timerModel.timerString.split(separator: ":")
+                    if comps.count == 2 {
+                        minutesText = String(comps[0])
+                        secondsText = String(comps[1])
+                    }
                 } label: {
                     if timerModel.isTimerRunning {
                         Image(systemName: "stop.circle.fill")
@@ -139,14 +171,81 @@ struct TimerView: View {
     }
     
     private func commitTimerValue() {
-        let components = editableTime.split(separator: ":")
-        if components.count == 2,
-           let m = Int(components[0].trimmingCharacters(in: .whitespaces)),
-           let s = Int(components[1].trimmingCharacters(in: .whitespaces)) {
+        if let m = Int(minutesText.trimmingCharacters(in: .whitespaces)),
+           let s = Int(secondsText.trimmingCharacters(in: .whitespaces)) {
             timerModel.setTime(minutes: m, seconds: s)
-            editableTime = timerModel.timerString
         } else {
             print("Invalid input format")
+        }
+    }
+}
+
+class CustomNSTextField: NSTextField {
+    var onArrowLeft: (() -> Void)?
+    var onArrowRight: (() -> Void)?
+    
+    override func keyDown(with event: NSEvent) {
+        // Left arrow key code: 123, Right arrow key code: 124
+        if event.keyCode == 123 {
+            onArrowLeft?()
+        } else if event.keyCode == 124 {
+            onArrowRight?()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+}
+
+struct NumericTextField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String = ""
+    var showCursor: Bool = true
+    var font: NSFont = NSFont.monospacedSystemFont(ofSize: 80, weight: .regular)
+    var onCommit: (() -> Void)? = nil
+    var onArrowLeft: (() -> Void)? = nil
+    var onArrowRight: (() -> Void)? = nil
+
+    func makeNSView(context: Context) -> CustomNSTextField {
+        let textField = CustomNSTextField(frame: .zero)
+        textField.placeholderString = placeholder
+        textField.isBordered = false
+        textField.backgroundColor = .clear
+        textField.font = font
+        textField.delegate = context.coordinator
+        textField.isEditable = true
+        textField.isSelectable = true
+        textField.onArrowLeft = onArrowLeft
+        textField.onArrowRight = onArrowRight
+        return textField
+    }
+    
+    func updateNSView(_ nsView: CustomNSTextField, context: Context) {
+        nsView.stringValue = text
+        nsView.font = font
+
+        // Fetch the field editor (NSTextView) if the text field is being edited.
+        if let fieldEditor = nsView.currentEditor() as? NSTextView {
+            fieldEditor.insertionPointColor = showCursor ? NSColor.controlAccentColor : NSColor.clear
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: NumericTextField
+        init(_ parent: NumericTextField) {
+            self.parent = parent
+        }
+        func controlTextDidChange(_ obj: Notification) {
+            if let textField = obj.object as? NSTextField {
+                // Filter out non-numeric characters
+                parent.text = textField.stringValue.filter { $0.isNumber }
+            }
+        }
+        func controlTextDidEndEditing(_ obj: Notification) {
+            parent.onCommit?()
         }
     }
 }
