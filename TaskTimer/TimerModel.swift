@@ -77,6 +77,10 @@ class TimerModel: ObservableObject {
         remainingSeconds = 0  // now the timer displays "00:00"
     }
     
+    func addMinutes(minutes: Int) {
+        remainingSeconds += minutes * 60
+    }
+    
     func scheduleNotification() {
         let content = UNMutableNotificationContent()
         content.title = "Timer Finished"

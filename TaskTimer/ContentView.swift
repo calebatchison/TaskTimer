@@ -132,6 +132,25 @@ struct TimerView: View {
                     }
                 }
                 .buttonStyle(BorderlessButtonStyle())
+                
+                VStack {
+                    // add 5 minutes to timer
+                    Button("+1m") {
+                        timerModel.addMinutes(minutes: 1)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint( timerModel.isTimerRunning ? .white : .gray)
+                    .controlSize(.small)
+                    .disabled(!timerModel.isTimerRunning)
+                    
+                    Button("+5m") {
+                        timerModel.addMinutes(minutes: 5)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint( timerModel.isTimerRunning ? .white : .gray)
+                    .controlSize(.small)
+                    .disabled(!timerModel.isTimerRunning)
+                }
             }
         }
         .frame(width: 250, height: 150)
